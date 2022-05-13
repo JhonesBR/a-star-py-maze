@@ -22,6 +22,7 @@ class Maze:
         self.maze = []
         self.height = height
         self.width = width
+        self.visitedCells = []
         
         # Find number of surrounding cells
         def surroundingCells(rand_wall):
@@ -254,6 +255,14 @@ class Maze:
             if self.maze[self.width-1][col] == self.cell:
                 self.endPoint = [self.width-1, col]
 
+        # Set initial points as visited
+        self.UpdateCurrentPoint(self.current[0], self.current[1])
+
+    def Restart(self):
+        self.visitedCells = []
+        self.current = self.startPoint
+        self.UpdateCurrentPoint(self.current[0], self.current[1])
+
     def __repr__(self):
         repr = ""
         for i in range(0, self.height):
@@ -269,7 +278,7 @@ class Maze:
         return repr
     
     def GetCv2Image(self):
-        mazeR = self.GetMazeRepr()
+        mazeR = self.maze
         pixels = []
         for i in range(len(mazeR)):
             line = []
@@ -291,21 +300,54 @@ class Maze:
         array = np.array(pixels, dtype=np.uint8)
         return cv2.cvtColor(np.array(im.fromarray(array).convert('RGB')), cv2.COLOR_RGB2BGR)
     
-    def GetMazeRepr(self):
-        return self.maze
-    
     def GetCellChar(self):
         return self.cell
     
     def GetWallChar(self):
         return self.wall
-    
-    def GetHeight(self):
-        return self.height
-    
-    def GetWidth(self):
-        return self.width
+
+    def GetPosition(self):
+        return self.current
 
     def UpdateCurrentPoint(self, x, y):
-        self.visitedCells.append([x, y])
         self.current = [x, y]
+        if self.current not in self.visitedCells:
+            self.visitedCells.append(self.current)
+
+    def IsValidMove(self, x, y):
+        if (x < 0 or x >= self.height or y < 0 or y >= self.width):
+            return False
+        if (self.maze[x][y] == self.wall):
+            return False
+        return True
+
+    def MoveUp(self):
+        x, y = self.current[0]-1, self.current[1]
+        if self.validMove(x, y):
+            self.UpdateCurrentPoint(x, y)
+
+    def MoveDown(self):
+        x, y = self.current[0]+1, self.current[1]
+        if self.validMove(x, y):
+            self.UpdateCurrentPoint(x, y)
+
+    def MoveRight(self):
+        x, y = self.current[0], self.current[1]+1
+        if self.validMove(x, y):
+            self.UpdateCurrentPoint(x, y)
+
+    def MoveLeft(self):
+        x, y = self.current[0], self.current[1]-1
+        if self.validMove(x, y):
+            self.UpdateCurrentPoint(x, y)
+
+    def validMove(self, x, y):
+        if (x < 0 or x >= self.height or y < 0 or y >= self.width):
+            return False
+        if (self.maze[x][y] == self.wall):
+            return False
+        return True
+
+    def GetValidMoves(self, x, y):
+        suposedValid = [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]
+        return [move for move in suposedValid if self.IsValidMove(move[0], move[1])]
