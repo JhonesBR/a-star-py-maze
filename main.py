@@ -7,11 +7,22 @@ from PIL import Image as im
 import cv2
 import random
 from tkinter import messagebox
+import matplotlib.pyplot as plt
 
 def updateImage():
-    global opencvImage
-    opencvImage = maze.GetCv2Image()
-    opencvImage = cv2.resize(opencvImage, (ImgHeight, int(ImgHeight*height/width)), interpolation = cv2.INTER_AREA)
+    text = searchMethodsName[activeSearchMethodIndex]
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    opencvImage = cv2.resize(maze.cv2Image, (ImgHeight, int(ImgHeight*height/width)), interpolation = cv2.INTER_AREA)
+    
+    description = np.zeros((int(ImgHeight*0.2), int(ImgHeight*height/width), 3), np.uint8)
+    description.fill(255)
+    textsize = cv2.getTextSize(text, font, 1, 2)[0]
+    textX = int((description.shape[1] - textsize[0]) / 2)
+    textY = int((description.shape[0] + textsize[1]) / 2)
+    cv2.putText(description, text, (textX, textY), font, 1, (0, 0, 0), 2, cv2.LINE_AA)
+
+    cv2.imshow(title, np.concatenate((opencvImage, description), axis=0))
+    cv2.waitKey(1)
 
 def verifyEnd(maze):
     if (maze.endPoint == maze.current):
@@ -32,27 +43,60 @@ def randomSearch(maze, delay):
     nMoves += 1
     sleep(delay/1000)
 
+backtrack = 0
 def depthSearch(maze, delay):
-    # TODO NOT YET IMPLEMENTED
-    pass
+    current = maze.current
+    global backtrack
+    global nMoves
+    validMoves = maze.GetValidMoves(current[0], current[1])
+    newMoves = [move for move in validMoves if move not in maze.visitedCells]
+    if len(newMoves) > 0:
+        backtrack = 0
+        move = newMoves[0]
+        maze.UpdateCurrentPoint(move[0], move[1])
+        nMoves += 1
+        updateImage()
+        sleep(delay/1000)
+    else:
+        while len(newMoves) == 0:
+            backtrack += 1
+            nMoves += 1
+            current = maze.visitedCells[-backtrack]
+            validMoves = maze.GetValidMoves(current[0], current[1])
+            newMoves = [move for move in validMoves if move not in maze.visitedCells]
+            sleep(delay/1000)
+        move = newMoves[0]
+        maze.UpdateCurrentPoint(move[0], move[1])
+        nMoves += 1
+        updateImage()
+        sleep(delay/1000)
 
 def breadthSearch(maze, delay):
-    # TODO NOT YET IMPLEMENTED
-    pass
+    global nMoves
+    validMoves = []
+    for visitedCell in maze.visitedCells:
+        validMoves += maze.GetValidMoves(visitedCell[0], visitedCell[1])
+    newMoves = [move for move in validMoves if move not in maze.visitedCells]
+    for move in newMoves:
+        nMoves += 1
+        maze.UpdateCurrentPoint(move[0], move[1])
+        updateImage()
+        if maze.current == maze.endPoint:
+            return
+        sleep(delay/1000)
 
 def greedySearch(maze, delay):
     # Euclidean distance
     def h(x):
         return ((x[0]-maze.endPoint[0])**2 + (x[1]-maze.endPoint[1])**2)**0.5
 
-    visitedNodes = maze.visitedCells
     validMoves = []
-    for visitedNode in visitedNodes:
-        validMoves += maze.GetValidMoves(visitedNode[0], visitedNode[1])
+    for visitedCell in maze.visitedCells:
+        validMoves += maze.GetValidMoves(visitedCell[0], visitedCell[1])
     
     f = [h(move) for move in validMoves]
     for i in range(len(f)):
-        if validMoves[i] in visitedNodes:
+        if validMoves[i] in maze.visitedCells:
             f[i] = 999999999
         
     move = validMoves[f.index(min(f))]
@@ -81,11 +125,13 @@ def changeActiveSearch(index):
     activeSearchMethod = searchMethods[activeSearchMethodIndex]
 
 # Generate maze
-width, height = 25, 25
+width, height = 100, 100
 maze = Maze()
-maze.GenerateMaze(width, height)
+moreThanOnePath = True
+maze.GenerateMaze(width, height, moreThanOnePath)
 title = 'Maze'
-ImgHeight = 800
+ImgHeight = 500
+
 opencvImage = maze.GetCv2Image()
 opencvImage = cv2.resize(opencvImage, (ImgHeight, int(ImgHeight*height/width)), interpolation = cv2.INTER_AREA)
 
@@ -93,18 +139,17 @@ opencvImage = cv2.resize(opencvImage, (ImgHeight, int(ImgHeight*height/width)), 
 searchMethods = [manualSearch, randomSearch, depthSearch, breadthSearch, greedySearch, aStarSearch]
 searchMethodsName = ["Manual Search", "Random Seach", "Depth Search", "Breadth Seatch", "Greedy Best First", "A* Search"]
 activeSearchMethodIndex = 0
-activeSearchMethod = searchMethodsName[activeSearchMethodIndex]
+activeSearchMethod = searchMethods[activeSearchMethodIndex]
 end = False
 cv2.namedWindow(title)
 cv2.createTrackbar('delay',title , 0, 1000, nothing)
+updateImage()
 
 # Track moves
 nMoves = 0
 
 # Main loop
 while True:
-    cv2.imshow(title, opencvImage)
-
     keyPressed = cv2.waitKey(1)
     if keyPressed == ord('q'):
         cv2.destroyAllWindows
@@ -112,20 +157,20 @@ while True:
     
     # Generate a new maze
     if keyPressed == ord('g'):
-        maze.GenerateMaze(width, height)
-        activeSearchMethod = manualSearch
+        maze.GenerateMaze(width, height, moreThanOnePath)
+        changeActiveSearch(0)
         end = False
         updateImage()
 
     # Reset the maze
     if keyPressed == ord('r'):
         maze.Restart()
-        activeSearchMethod = manualSearch
+        changeActiveSearch(0)
         end = False
         updateImage()
 
     # Change active search method
-    if keyPressed in [ord('1'), ord('2'), ord('3'), ord('4'), ord('5')]:
+    if keyPressed in [ord('1'), ord('2'), ord('3'), ord('4'), ord('5'), ord('6')]:
         changeActiveSearch(keyPressed-ord('0')-1)
 
         # If the game started, restart it
@@ -138,7 +183,7 @@ while True:
         try:
             activeSearchMethod(maze, cv2.getTrackbarPos('delay', title))
         except:
-            continue
+            print("Error")
 
         if keyPressed == ord('w'):
             nMoves += 1

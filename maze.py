@@ -14,11 +14,12 @@ class Maze:
     width = 0
     visitedCells = []
     current = [0, 0]
-    
+    cv2Image = []
+
     def __init__(self):
         pass
         
-    def GenerateMaze(self, width, height):
+    def GenerateMaze(self, width, height, moreThanOnePath=False):
         self.maze = []
         self.height = height
         self.width = width
@@ -244,7 +245,17 @@ class Maze:
             if (self.maze[height-2][i] == self.cell):
                 self.maze[height-1][i] = self.cell
                 break
-            
+        
+        if moreThanOnePath:
+            walls = []
+            for col in range(1, width-1):
+                for row in range(1, height-1):
+                    if self.maze[row][col] == self.wall:
+                        walls.append([row, col])
+            random.shuffle(walls)
+            for i in walls[:int(len(walls)/25)]:
+                self.maze[i[0]][i[1]] = self.cell
+
         # Determine start and end points
         for col in range(self.width):
             if self.maze[0][col] == self.cell:
@@ -255,12 +266,16 @@ class Maze:
             if self.maze[self.width-1][col] == self.cell:
                 self.endPoint = [self.width-1, col]
 
+        self.GenerateCv2Image()
+        
         # Set initial points as visited
         self.UpdateCurrentPoint(self.current[0], self.current[1])
+        
 
     def Restart(self):
         self.visitedCells = []
         self.current = self.startPoint
+        self.GenerateCv2Image()
         self.UpdateCurrentPoint(self.current[0], self.current[1])
 
     def __repr__(self):
@@ -283,9 +298,9 @@ class Maze:
         for i in range(len(mazeR)):
             line = []
             for j in range(len(mazeR[0])):
-                if mazeR[i][j] == self.GetCellChar():
+                if mazeR[i][j] == self.cell:
                     line.append((255, 255, 255));
-                elif mazeR[i][j] == self.GetWallChar():
+                elif mazeR[i][j] == self.wall:
                     line.append((0, 0, 0))
                 else:
                     line.append((50, 50, 50))
@@ -300,26 +315,35 @@ class Maze:
         array = np.array(pixels, dtype=np.uint8)
         return cv2.cvtColor(np.array(im.fromarray(array).convert('RGB')), cv2.COLOR_RGB2BGR)
     
-    def GetCellChar(self):
-        return self.cell
-    
-    def GetWallChar(self):
-        return self.wall
-
-    def GetPosition(self):
-        return self.current
+    def GenerateCv2Image(self):
+        mazeR = self.maze
+        pixels = []
+        for i in range(len(mazeR)):
+            line = []
+            for j in range(len(mazeR[0])):
+                if mazeR[i][j] == self.cell:
+                    line.append((255, 255, 255));
+                elif mazeR[i][j] == self.wall:
+                    line.append((0, 0, 0))
+                else:
+                    line.append((50, 50, 50))
+            
+                if [i, j] in self.visitedCells:
+                    line[-1] = (0, 255, 0)
+                    
+                if [i, j] == self.current:
+                    line[-1] = (255, 0, 0)
+                    
+            pixels.append(line)
+        array = np.array(pixels, dtype=np.uint8)
+        self.cv2Image = cv2.cvtColor(np.array(im.fromarray(array).convert('RGB')), cv2.COLOR_RGB2BGR)
 
     def UpdateCurrentPoint(self, x, y):
+        self.cv2Image[self.current[0]][self.current[1]] = [0, 255, 0]
         self.current = [x, y]
+        self.cv2Image[x, y] = [0,0,255]
         if self.current not in self.visitedCells:
             self.visitedCells.append(self.current)
-
-    def IsValidMove(self, x, y):
-        if (x < 0 or x >= self.height or y < 0 or y >= self.width):
-            return False
-        if (self.maze[x][y] == self.wall):
-            return False
-        return True
 
     def MoveUp(self):
         x, y = self.current[0]-1, self.current[1]
@@ -349,5 +373,5 @@ class Maze:
         return True
 
     def GetValidMoves(self, x, y):
-        suposedValid = [[x-1, y], [x+1, y], [x, y-1], [x, y+1]]
-        return [move for move in suposedValid if self.IsValidMove(move[0], move[1])]
+        suposedValid = [[x+1, y], [x, y+1], [x-1, y], [x, y-1]]
+        return [move for move in suposedValid if self.validMove(move[0], move[1])]
