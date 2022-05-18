@@ -1,6 +1,5 @@
 # Inspiration https://medium.com/swlh/fun-with-python-1-maze-generator-931639b4fb7e
 import random
-from colorama import Fore
 import numpy as np
 from PIL import Image as im
 import cv2
@@ -246,6 +245,7 @@ class Maze:
                 self.maze[height-1][i] = self.cell
                 break
         
+        # Open paths if moreThanOnePath is True
         if moreThanOnePath:
             walls = []
             for col in range(1, width-1):
@@ -266,31 +266,19 @@ class Maze:
             if self.maze[self.width-1][col] == self.cell:
                 self.endPoint = [self.width-1, col]
 
+        print(f"Start Point --> {self.startPoint}")
+        print(f"End Point --> {self.endPoint}")
+
         self.GenerateCv2Image()
         
         # Set initial points as visited
         self.UpdateCurrentPoint(self.current[0], self.current[1])
         
-
     def Restart(self):
         self.visitedCells = []
         self.current = self.startPoint
         self.GenerateCv2Image()
         self.UpdateCurrentPoint(self.current[0], self.current[1])
-
-    def __repr__(self):
-        repr = ""
-        for i in range(0, self.height):
-            for j in range(0, self.width):
-                if (self.maze[i][j] == "u"):
-                    repr += Fore.WHITE + str(self.maze[i][j])
-                elif (self.maze[i][j] == self.cell):
-                    repr += Fore.GREEN + str(self.maze[i][j])
-                else:
-                    repr += Fore.RED + str(self.maze[i][j])
-                
-            repr += "\n"
-        return repr
     
     def GetCv2Image(self):
         mazeR = self.maze
@@ -344,6 +332,11 @@ class Maze:
         self.cv2Image[x, y] = [0,0,255]
         if self.current not in self.visitedCells:
             self.visitedCells.append(self.current)
+
+    def highlightPath(self, path):
+        for node in path:
+            self.cv2Image[node[0]][node[1]] = [255, 0, 0]
+        self.cv2Image[self.endPoint[0]][self.endPoint[1]] = [0, 0, 255]
 
     def MoveUp(self):
         x, y = self.current[0]-1, self.current[1]
