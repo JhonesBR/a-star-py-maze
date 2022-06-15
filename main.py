@@ -1,14 +1,13 @@
 # Imports
 from random import randint
 from time import sleep
+from turtle import update
 from maze import Maze
 from node import Node
 import numpy as np
-from PIL import Image as im
 import cv2
 import random
 from tkinter import messagebox
-import matplotlib.pyplot as plt
 
 def updateImage():
     # Generate description text
@@ -157,9 +156,52 @@ def greedySearch(maze, delay):
     maze.highlightPath(path)
 
 def aStarSearch(maze, delay):
-    # TODO: Implement A* search
-    pass
-
+    # h(x) --> Euclidean distance
+    def h(x):
+        return ((x[0]-maze.endPoint[0])**2 + (x[1]-maze.endPoint[1])**2)**0.5
+    
+    def coordToNode(coord, prev=None):
+        return Node(prev, coord)
+    
+    global nMoves
+    openList, closedList = [], []
+    startNode = coordToNode(maze.startPoint)
+    endNode = coordToNode(maze.endPoint)
+    closedList.append(startNode)
+    for neighbor in maze.GetValidMoves(startNode.position[0], startNode.position[1]):
+        openList.append(coordToNode(neighbor, startNode))
+        
+    while len(openList) > 0:
+        if maze.current == endNode.position:
+            break
+    
+        # Calculate openList f(x)
+        for node in openList:
+            node.g = node.parent.g + 1
+            node.h = h(node.position)
+            node.f = node.g + h(node.position)
+            if node in closedList:
+                openList.f = '999999999'
+        
+        # Move to lowest f(x)
+        openListFs = [node.f for node in openList]
+        nodeToMove = openList[openListFs.index(min(openListFs))]
+        maze.UpdateCurrentPoint(nodeToMove.position[0], nodeToMove.position[1])
+        updateImage()
+        nMoves += 1
+        sleep(delay/1000)
+        
+        # Move it to the closed list
+        closedList.append(nodeToMove)
+        openList.remove(nodeToMove)
+        
+        # Append all valid moves from that node to the open list
+        for neighbor in maze.GetValidMoves(nodeToMove.position[0], nodeToMove.position[1]):
+            closedListPositions = [node.position for node in closedList]
+            openListPositions = [node.position for node in openList]
+            if neighbor not in closedListPositions and neighbor not in openListPositions:
+                openList.append(coordToNode(neighbor, nodeToMove))
+        
 def manualSearch(maze, delay):
     # Controled by the main loop and object
     pass
@@ -176,10 +218,10 @@ def changeActiveSearch(index):
     activeSearchMethod = searchMethods[activeSearchMethodIndex]
 
 # Parameters
-width, height = 100, 100
+width, height = 10, 10
 moreThanOnePath = True
 title = 'Maze'
-ImgHeight = 500
+ImgHeight = 300
 
 # Variables
 searchMethods = [manualSearch, randomSearch, depthSearch, breadthSearch, greedySearch, aStarSearch]
@@ -191,7 +233,7 @@ nMoves = 0
 
 # Generation
 maze = Maze()
-maze.GenerateMaze(width, height, moreThanOnePath)
+maze.GenerateMaze(width, height, moreThanOnePath, 5)
 opencvImage = maze.GetCv2Image()
 opencvImage = cv2.resize(opencvImage, (ImgHeight, int(ImgHeight*height/width)), interpolation = cv2.INTER_AREA)
 cv2.namedWindow(title)

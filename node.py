@@ -8,3 +8,13 @@ class Node():
 
     def __eq__(self, other):
         return self.position == other.position
+    
+    def __repr__(self):
+        s = ""
+        if self.parent:
+            s += 'Parent: ' + str(self.parent.position) + '\n'
+        s += 'Position: ' + str(self.position) + '\n'
+        s += 'g: ' + str(self.g) + '\n'
+        s += 'h: ' + str(self.h) + '\n'
+        s += 'f: ' + str(self.f)
+        return s

@@ -18,7 +18,7 @@ class Maze:
     def __init__(self):
         pass
         
-    def GenerateMaze(self, width, height, moreThanOnePath=False):
+    def GenerateMaze(self, width, height, moreThanOnePath=False, openCoeff=5):
         self.maze = []
         self.height = height
         self.width = width
@@ -253,7 +253,7 @@ class Maze:
                     if self.maze[row][col] == self.wall:
                         walls.append([row, col])
             random.shuffle(walls)
-            for i in walls[:int(len(walls)/25)]:
+            for i in walls[:int(len(walls)/openCoeff)]:
                 self.maze[i[0]][i[1]] = self.cell
 
         # Determine start and end points
