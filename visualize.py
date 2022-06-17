@@ -11,7 +11,8 @@ class DashVisualize:
         for i in range(len(closed_elements)):
             valid_elements.append(
                 {"data":
-                    {"id": i, "label": f"Node {i}"},
+                    {"id": i,
+                        "label": f"[{closed_elements[i][0]}], [{closed_elements[i][1]}]"},
                  "position":
                     {"x": closed_elements[i][0]*100,
                         "y": closed_elements[i][1]*100}
