@@ -191,7 +191,7 @@ def aStarSearch(maze, delay):
         for node in openList:
             node.g = node.parent.g + 1
             node.h = h(node.position)
-            node.f = node.g + h(node.position)
+            node.f = node.g + node.h
             if node in closedList:
                 openList.f = '999999999'
 
@@ -216,9 +216,10 @@ def aStarSearch(maze, delay):
 
     # Highlight the path
     maze.highlightPath([node.position for node in closedList])
+    updateImage()
 
     # Visualize the path
-    DashVisualize(openListPositions, closedListPositions, "A* Search")
+    DashVisualize(openList, closedList, "A* Search")
 
 
 def manualSearch(maze, delay):
@@ -240,7 +241,7 @@ def changeActiveSearch(index):
 
 
 # Parameters
-width, height = 10, 10
+width, height = 5, 5
 moreThanOnePath = True
 title = 'Maze'
 ImgHeight = 300

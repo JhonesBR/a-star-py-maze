@@ -4,35 +4,33 @@ import dash_cytoscape as cyto
 
 class DashVisualize:
 
-    def __init__(self, open_elements, closed_elements, title):
+    def __init__(self, openList, closedList, title):
+        cyto.load_extra_layouts()
         valid_elements = []
 
         # Create a list of valid elements
-        for i in range(len(closed_elements)):
+        for i in range(len(closedList)):
             valid_elements.append(
                 {"data":
-                    {"id": i,
-                        "label": f"[{closed_elements[i][0]}], [{closed_elements[i][1]}]"},
-                 "position":
-                    {"x": closed_elements[i][0]*100,
-                        "y": closed_elements[i][1]*100}
+                    {"id": f"[{closedList[i].position[0]}, {closedList[i].position[1]}]",
+                        "label": f"{i} f:{closedList[i].f:.2f} g:{closedList[i].g:.2f} h:{closedList[i].h:.2f}"}
                  }
             )
 
         # Point source -> target on valid_elements
-        for i in range(len(closed_elements)-1):
-            valid_elements.append({"data": {"source": i, "target": i+1}})
-
-        print(valid_elements)
+        for node in closedList:
+            if node.parent:
+                valid_elements.append({"data": {"source": f"[{node.parent.position[0]}, {node.parent.position[1]}]",
+                "target": f"[{node.position[0]}, {node.position[1]}]"}})
 
         app = Dash(__name__)
         app.layout = html.Div(children=[
             cyto.Cytoscape(
                 id=title,
                 elements=valid_elements,
-                style={'width': '1280px', 'height': '720px'},
-                layout={'name': 'preset'}
-            ), f"Open List: {open_elements}\n\nClosed List: {closed_elements}"
+                style={'width': '1920px', 'height': '1080px'},
+                layout={'name': 'dagre'}
+            ), f"Open List: {openList}\n\nClosed List: {closedList}"
         ])
 
         app.run_server()
