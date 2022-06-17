@@ -6,6 +6,9 @@ class Node():
         self.h = 0
         self.f = 0
 
+        # Used for visualization
+        self.highlighted = False 
+
     def __eq__(self, other):
         return self.position == other.position
     

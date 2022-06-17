@@ -9,6 +9,19 @@ from visualize import DashVisualize
 import numpy as np
 import cv2
 import random
+from threading import Thread
+
+class Th(Thread):
+
+
+    def __init__ (self, openList, closedList, title):
+        self.openList = openList
+        self.closedList = closedList
+        self.title = title
+        Thread.__init__(self)
+
+    def run(self):
+        DashVisualize(self.openList, self.closedList, self.title)
 
 
 def updateImage():
@@ -34,6 +47,7 @@ def updateImage():
 def randomSearch(maze, delay):
     # Variables
     global nMoves
+    nMoves = 0
     path = []
 
     # While the end point isn't reached (or key "s" is pressed)
@@ -60,7 +74,8 @@ def depthSearch(maze, delay):
     # Variables
     global backtrack
     global nMoves
-    path = []
+    nMoves = 0
+    path = [maze.startPoint]
     backtrack = 0
 
     # While the end point isn't reached
@@ -105,7 +120,8 @@ def depthSearch(maze, delay):
 def breadthSearch(maze, delay):
     # Variables
     global nMoves
-    path = []
+    nMoves = 0
+    path = [maze.startPoint]
 
     # While the end point isn't reached
     while maze.current != maze.endPoint:
@@ -137,6 +153,7 @@ def greedySearch(maze, delay):
 
     # Variables
     global nMoves
+    nMoves = 0
     path = []
 
     # While the end point isn't reached
@@ -167,15 +184,19 @@ def greedySearch(maze, delay):
     maze.highlightPath(path)
 
 
-def aStarSearch(maze, delay):
+def aStarSearch(maze, delay, wrong=False):
     # h(x) --> Euclidean distance
     def h(x):
+        if wrong:
+            # TODO: Implement h(x) for the wrong heuristic
+            return ((x[0]-maze.endPoint[0])**2 + (x[1]-maze.endPoint[1])**2)**0.5 
         return ((x[0]-maze.endPoint[0])**2 + (x[1]-maze.endPoint[1])**2)**0.5
 
     def coordToNode(coord, prev=None):
         return Node(prev, coord)
 
     global nMoves
+    nMoves = 0
     openList, closedList = [], []
     startNode = coordToNode(maze.startPoint)
     endNode = coordToNode(maze.endPoint)
@@ -200,7 +221,6 @@ def aStarSearch(maze, delay):
         nodeToMove = openList[openListFs.index(min(openListFs))]
         maze.UpdateCurrentPoint(nodeToMove.position[0], nodeToMove.position[1])
         updateImage()
-        nMoves += 1
         sleep(delay/1000)
 
         # Move it to the closed list
@@ -214,12 +234,20 @@ def aStarSearch(maze, delay):
             if neighbor not in closedListPositions and neighbor not in openListPositions:
                 openList.append(coordToNode(neighbor, nodeToMove))
 
-    # Highlight the path
-    maze.highlightPath([node.position for node in closedList])
+    # Highlight the optimal path
+    path = []
+    current = nodeToMove
+    while current is not None:
+        nMoves += 1
+        path.append(current.position)
+        current.highlighted = True
+        current = current.parent
+    maze.highlightPath(path)
     updateImage()
 
     # Visualize the path
-    DashVisualize(openList, closedList, "A* Search")
+    visualization = Th(openList, closedList, "A* Search")
+    visualization.start()
 
 
 def manualSearch(maze, delay):
@@ -241,7 +269,7 @@ def changeActiveSearch(index):
 
 
 # Parameters
-width, height = 5, 5
+width, height = 20, 20
 moreThanOnePath = True
 title = 'Maze'
 ImgHeight = 300
