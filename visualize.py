@@ -1,10 +1,11 @@
 from dash import Dash, html
 import dash_cytoscape as cyto
+import threading
 
 
 class DashVisualize:
 
-    def __init__(self, openList, closedList, title):
+    def __init__(self, openList, closedList, title,port):
         cyto.load_extra_layouts()
         valid_elements = []
 
@@ -58,4 +59,4 @@ class DashVisualize:
             ), f"Open List: {openList}\n\nClosed List: {closedList}"
         ])
 
-        app.run_server()
+        threading.Thread(target=lambda: app.run(debug=True, use_reloader=False, port=port)).start()

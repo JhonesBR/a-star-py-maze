@@ -12,16 +12,15 @@ import random
 from threading import Thread
 
 class Th(Thread):
-
-
-    def __init__ (self, openList, closedList, title):
+    def __init__ (self, openList, closedList, title, port):
         self.openList = openList
         self.closedList = closedList
         self.title = title
+        self.port = port
         Thread.__init__(self)
 
     def run(self):
-        DashVisualize(self.openList, self.closedList, self.title)
+        DashVisualize(self.openList, self.closedList, self.title, self.port)
 
 
 def updateImage():
@@ -188,8 +187,7 @@ def aStarSearch(maze, delay, wrong=False):
     # h(x) --> Euclidean distance
     def h(x):
         if wrong:
-            # TODO: Implement h(x) for the wrong heuristic
-            return ((x[0]-maze.endPoint[0])**2 + (x[1]-maze.endPoint[1])**2)**0.5 
+            return (((x[0]-maze.endPoint[0])**2 + (x[1]-maze.endPoint[1])**2)**0.5) * (1+random.random())
         return ((x[0]-maze.endPoint[0])**2 + (x[1]-maze.endPoint[1])**2)**0.5
 
     def coordToNode(coord, prev=None):
@@ -246,7 +244,7 @@ def aStarSearch(maze, delay, wrong=False):
     updateImage()
 
     # Visualize the path
-    visualization = Th(openList, closedList, "A* Search")
+    visualization = Th(openList, closedList, "A* Search", ("8051" if wrong else "8050"))
     visualization.start()
 
 
@@ -269,16 +267,16 @@ def changeActiveSearch(index):
 
 
 # Parameters
-width, height = 20, 20
+width, height = 15, 15
 moreThanOnePath = True
 title = 'Maze'
 ImgHeight = 300
 
 # Variables
 searchMethods = [manualSearch, randomSearch, depthSearch,
-                 breadthSearch, greedySearch, aStarSearch]
+                 breadthSearch, greedySearch, aStarSearch, aStarSearch]
 searchMethodsName = ["Manual Search", "Random Seach",
-                     "Depth Search", "Breadth Seatch", "Greedy Best First", "A* Search"]
+                     "Depth Search", "Breadth Seatch", "Greedy Best First", "A* Search", 'A* Search (Wrong)']
 activeSearchMethodIndex = 0
 activeSearchMethod = searchMethods[activeSearchMethodIndex]
 end = False
@@ -319,7 +317,7 @@ while True:
         updateImage()
 
     # Change active search method
-    if keyPressed in [ord('1'), ord('2'), ord('3'), ord('4'), ord('5'), ord('6')]:
+    if keyPressed in [ord('1'), ord('2'), ord('3'), ord('4'), ord('5'), ord('6'), ord('7')]:
         changeActiveSearch(keyPressed-ord('0')-1)
 
         # If the game started, restart it
@@ -330,7 +328,10 @@ while True:
 
         # Activate the selected search method
         try:
-            activeSearchMethod(maze, cv2.getTrackbarPos('delay', title))
+            if keyPressed == ord('7'):
+                activeSearchMethod(maze, cv2.getTrackbarPos('delay', title), wrong=True)
+            else:
+                activeSearchMethod(maze, cv2.getTrackbarPos('delay', title))
         except Exception as e:
             print(e)
             cv2.destroyAllWindows()
