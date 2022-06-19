@@ -187,7 +187,7 @@ def aStarSearch(maze, delay, wrong=False):
     # h(x) --> Euclidean distance
     def h(x):
         if wrong:
-            return (((x[0]-maze.endPoint[0])**2 + (x[1]-maze.endPoint[1])**2)**0.5) * (1+random.random())
+            return (((x[0]-maze.endPoint[0])**2 + (x[1]-maze.endPoint[1])**2)**0.5) * (height**2 * random.random())
         return ((x[0]-maze.endPoint[0])**2 + (x[1]-maze.endPoint[1])**2)**0.5
 
     def coordToNode(coord, prev=None):
@@ -227,6 +227,7 @@ def aStarSearch(maze, delay, wrong=False):
 
         # Append all valid moves from that node to the open list
         for neighbor in maze.GetValidMoves(nodeToMove.position[0], nodeToMove.position[1]):
+            # Avoid nodes with same coords in open list
             closedListPositions = [node.position for node in closedList]
             openListPositions = [node.position for node in openList]
             if neighbor not in closedListPositions and neighbor not in openListPositions:
@@ -267,7 +268,7 @@ def changeActiveSearch(index):
 
 
 # Parameters
-width, height = 15, 15
+width, height = 25, 25
 moreThanOnePath = True
 title = 'Maze'
 ImgHeight = 300

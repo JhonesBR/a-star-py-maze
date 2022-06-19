@@ -363,12 +363,17 @@ class Maze:
             self.UpdateCurrentPoint(x, y)
 
     def validMove(self, x:int, y:int):
+        # Cant move beyond boundaries
         if (x < 0 or x >= self.height or y < 0 or y >= self.width):
             return False
+        # Cant move to wall
         if (self.maze[x][y] == self.wall):
             return False
         return True
 
     def GetValidMoves(self, x:int, y:int):
+        # All directions [r, u, l, d]
         suposedValid = [[x+1, y], [x, y+1], [x-1, y], [x, y-1]]
+        
+        # Return array of possible directions to go ex. [up, down]
         return [move for move in suposedValid if self.validMove(move[0], move[1])]
