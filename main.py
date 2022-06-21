@@ -268,7 +268,7 @@ def changeActiveSearch(index):
 
 
 # Parameters
-width, height = 25, 25
+width, height = 15, 15
 moreThanOnePath = True
 title = 'Maze'
 ImgHeight = 300

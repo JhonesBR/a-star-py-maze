@@ -1,3 +1,4 @@
+from turtle import position
 from dash import Dash, html
 import dash_cytoscape as cyto
 import threading
@@ -49,14 +50,30 @@ class DashVisualize:
                     }
                 )
 
+        openListPositions = [node.position for node in openList]
+        closedListPositions = [node.position for node in closedList]
+        path = [str(node.position) for node in closedList if node.highlighted]
+
         app = Dash(__name__)
         app.layout = html.Div(children=[
             cyto.Cytoscape(
                 id=title,
                 elements=valid_elements,
-                style={'width': '1920px', 'height': '1080px'},
+                style={'width': '1920px', 'height': '900px'},
                 layout={'name': 'dagre'}
-            ), f"Open List: {openList}\n\nClosed List: {closedList}"
+            ),
+             html.Div(
+                children=f'Path: {("-->".join(path))}'
+            ),
+            html.Div(children='', style={'height': '20px'}),
+            html.Div(
+                children=f'Open List: {openListPositions}'
+            ),
+            html.Div(children='', style={'height': '20px'}),
+            html.Div(
+                children=f'Closed List: {closedListPositions}'
+            ),
+            html.Div(children='', style={'height': '100px'}),
         ])
 
         threading.Thread(target=lambda: app.run(debug=True, use_reloader=False, port=port)).start()
