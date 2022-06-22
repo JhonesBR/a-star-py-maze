@@ -212,7 +212,7 @@ def aStarSearch(maze, delay, wrong=False):
             node.h = h(node.position)
             node.f = node.g + node.h
             if node in closedList:
-                openList.f = '999999999'
+                node.f = 999999999
 
         # Move to lowest f(x)
         openListFs = [node.f for node in openList]
@@ -277,7 +277,7 @@ ImgHeight = 300
 searchMethods = [manualSearch, randomSearch, depthSearch,
                  breadthSearch, greedySearch, aStarSearch, aStarSearch]
 searchMethodsName = ["Manual Search", "Random Seach",
-                     "Depth Search", "Breadth Seatch", "Greedy Best First", "A* Search", 'A* Search (Wrong)']
+                     "Depth Search", "Breadth Search", "Greedy Best First", "A* Search", 'A* Search (Wrong)']
 activeSearchMethodIndex = 0
 activeSearchMethod = searchMethods[activeSearchMethodIndex]
 end = False

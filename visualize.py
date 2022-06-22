@@ -1,4 +1,3 @@
-from turtle import position
 from dash import Dash, html
 import dash_cytoscape as cyto
 import threading
@@ -29,6 +28,20 @@ class DashVisualize:
                     }
                 },
             )
+        for i in range(len(openList)):
+            valid_elements.append(
+                {
+                    "data":
+                    {
+                        "id": f"[{openList[i].position[0]}, {openList[i].position[1]}]",
+                        "label": f"({i}) f:{openList[i].f:.2f} g:{openList[i].g} h:{openList[i].h:.2f}"
+                    },
+                    'style':
+                    {
+                        'background-color': '#96be25'
+                    }
+                },
+            )
 
         # Point source -> target on valid_elements
         for node in closedList:
@@ -49,6 +62,23 @@ class DashVisualize:
                         }
                     }
                 )
+        
+        for node in openList:
+            if node.parent:
+                valid_elements.append(
+                    {
+                        "data":
+                        {
+                            "source": f"[{node.parent.position[0]}, {node.parent.position[1]}]",
+                            "target": f"[{node.position[0]}, {node.position[1]}]"
+                        },
+                        'style':
+                        {
+                            'line-color': '#96be25'
+                        }
+                    }
+                )
+
 
         openListPositions = [node.position for node in openList]
         closedListPositions = [node.position for node in closedList]
