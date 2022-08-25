@@ -1,3 +1,4 @@
+from threading import Thread
 from dash import Dash, html
 import dash_cytoscape as cyto
 import threading
@@ -5,22 +6,22 @@ import threading
 
 class DashVisualize:
 
-    def __init__(self, openList, closedList, title,port):
+    def __init__(self, open_list, closed_list, title, port):
         cyto.load_extra_layouts()
         valid_elements = []
 
         # Create a list of valid elements
-        for i in range(len(closedList)):
+        for i in range(len(closed_list)):
             color = "gray"
-            if closedList[i].highlighted:
+            if closed_list[i].highlighted:
                 color = "red"
 
             valid_elements.append(
                 {
                     "data":
                     {
-                        "id": f"[{closedList[i].position[0]}, {closedList[i].position[1]}]",
-                        "label": f"({i}) f:{closedList[i].f:.2f} g:{closedList[i].g} h:{closedList[i].h:.2f}"
+                        "id": f"[{closed_list[i].position[0]}, {closed_list[i].position[1]}]",
+                        "label": f"({i}) f:{closed_list[i].f:.2f} g:{closed_list[i].g} h:{closed_list[i].h:.2f}"
                     },
                     'style':
                     {
@@ -28,13 +29,13 @@ class DashVisualize:
                     }
                 },
             )
-        for i in range(len(openList)):
+        for i in range(len(open_list)):
             valid_elements.append(
                 {
                     "data":
                     {
-                        "id": f"[{openList[i].position[0]}, {openList[i].position[1]}]",
-                        "label": f"({i}) f:{openList[i].f:.2f} g:{openList[i].g} h:{openList[i].h:.2f}"
+                        "id": f"[{open_list[i].position[0]}, {open_list[i].position[1]}]",
+                        "label": f"({i}) f:{open_list[i].f:.2f} g:{open_list[i].g} h:{open_list[i].h:.2f}"
                     },
                     'style':
                     {
@@ -44,7 +45,7 @@ class DashVisualize:
             )
 
         # Point source -> target on valid_elements
-        for node in closedList:
+        for node in closed_list:
             if node.parent:
                 color = "gray"
                 if node.highlighted:
@@ -63,7 +64,7 @@ class DashVisualize:
                     }
                 )
         
-        for node in openList:
+        for node in open_list:
             if node.parent:
                 valid_elements.append(
                     {
@@ -80,9 +81,9 @@ class DashVisualize:
                 )
 
 
-        openListPositions = [node.position for node in openList]
-        closedListPositions = [node.position for node in closedList]
-        path = [str(node.position) for node in closedList if node.highlighted]
+        open_list_positions = [node.position for node in open_list]
+        closed_list_positions = [node.position for node in closed_list]
+        path = [str(node.position) for node in closed_list if node.highlighted]
 
         app = Dash(__name__)
         app.layout = html.Div(children=[
@@ -97,13 +98,25 @@ class DashVisualize:
             ),
             html.Div(children='', style={'height': '20px'}),
             html.Div(
-                children=f'Open List: {openListPositions}'
+                children=f'Open List: {open_list_positions}'
             ),
             html.Div(children='', style={'height': '20px'}),
             html.Div(
-                children=f'Closed List: {closedListPositions}'
+                children=f'Closed List: {closed_list_positions}'
             ),
             html.Div(children='', style={'height': '100px'}),
         ])
 
         threading.Thread(target=lambda: app.run(debug=True, use_reloader=False, port=port)).start()
+
+
+class Th(Thread):
+    def __init__ (self, open_list, closed_list, title, port):
+        self.open_list = open_list
+        self.closed_list = closed_list
+        self.title = title
+        self.port = port
+        Thread.__init__(self)
+
+    def run(self):
+        DashVisualize(self.open_list, self.closed_list, self.title, self.port)
