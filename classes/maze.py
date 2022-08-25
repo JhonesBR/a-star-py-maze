@@ -1,7 +1,8 @@
 # Inspiration https://medium.com/swlh/fun-with-python-1-maze-generator-931639b4fb7e
-import random
-import numpy as np
 from PIL import Image as im
+from typing import List
+import numpy as np
+import random
 import cv2
 
 class Maze:
@@ -11,18 +12,25 @@ class Maze:
     unvisited = "u"
     height = 0
     width = 0
-    visitedCells = []
+    visited_cells = []
     current = [0, 0]
     cv2Image = []
+
+    # BGR
+    WALL_COLOR = (0, 0, 0)
+    CELL_COLOR = (255, 255, 255)
+    CURRENT_COLOR = (0, 0, 255)
+    VISITED_COLOR = (180, 180, 180)
+    HIGHLIGHTED_COLOR = (0, 0, 255)
 
     def __init__(self):
         pass
         
-    def GenerateMaze(self, width, height, moreThanOnePath=False):
+    def GenerateMaze(self, width:int, height:int, more_than_one_path:bool=False, openCoeff:int=5):
         self.maze = []
         self.height = height
         self.width = width
-        self.visitedCells = []
+        self.visited_cells = []
         
         # Find number of surrounding cells
         def surroundingCells(rand_wall):
@@ -245,29 +253,29 @@ class Maze:
                 self.maze[height-1][i] = self.cell
                 break
         
-        # Open paths if moreThanOnePath is True
-        if moreThanOnePath:
+        # Open paths if more_than_one_path is True
+        if more_than_one_path:
             walls = []
             for col in range(1, width-1):
                 for row in range(1, height-1):
                     if self.maze[row][col] == self.wall:
                         walls.append([row, col])
             random.shuffle(walls)
-            for i in walls[:int(len(walls)/25)]:
+            for i in walls[:int(len(walls)/openCoeff)]:
                 self.maze[i[0]][i[1]] = self.cell
 
         # Determine start and end points
         for col in range(self.width):
             if self.maze[0][col] == self.cell:
-                self.startPoint = [0, col]
+                self.start_point = [0, col]
                 self.current = [0, col]
     
         for col in range(self.width):
             if self.maze[self.width-1][col] == self.cell:
-                self.endPoint = [self.width-1, col]
+                self.end_point = [self.width-1, col]
 
-        print(f"Start Point --> {self.startPoint}")
-        print(f"End Point --> {self.endPoint}")
+        print(f"Start Point --> {self.start_point}")
+        print(f"End Point --> {self.end_point}")
 
         self.GenerateCv2Image()
         
@@ -275,8 +283,8 @@ class Maze:
         self.UpdateCurrentPoint(self.current[0], self.current[1])
         
     def Restart(self):
-        self.visitedCells = []
-        self.current = self.startPoint
+        self.visited_cells = []
+        self.current = self.start_point
         self.GenerateCv2Image()
         self.UpdateCurrentPoint(self.current[0], self.current[1])
     
@@ -287,17 +295,15 @@ class Maze:
             line = []
             for j in range(len(mazeR[0])):
                 if mazeR[i][j] == self.cell:
-                    line.append((255, 255, 255));
+                    line.append(self.CELL_COLOR);
                 elif mazeR[i][j] == self.wall:
-                    line.append((0, 0, 0))
-                else:
-                    line.append((50, 50, 50))
+                    line.append(self.WALL_COLOR)
             
-                if [i, j] in self.visitedCells:
-                    line[-1] = (0, 255, 0)
+                if [i, j] in self.visited_cells:
+                    line[-1] = self.VISITED_COLOR
                     
                 if [i, j] == self.current:
-                    line[-1] = (255, 0, 0)
+                    line[-1] = self.CURRENT_COLOR
                     
             pixels.append(line)
         array = np.array(pixels, dtype=np.uint8)
@@ -310,61 +316,64 @@ class Maze:
             line = []
             for j in range(len(mazeR[0])):
                 if mazeR[i][j] == self.cell:
-                    line.append((255, 255, 255));
+                    line.append(self.CELL_COLOR);
                 elif mazeR[i][j] == self.wall:
-                    line.append((0, 0, 0))
-                else:
-                    line.append((50, 50, 50))
+                    line.append(self.WALL_COLOR)
             
-                if [i, j] in self.visitedCells:
-                    line[-1] = (0, 255, 0)
+                if [i, j] in self.visited_cells:
+                    line[-1] = self.VISITED_COLOR
                     
                 if [i, j] == self.current:
-                    line[-1] = (255, 0, 0)
+                    line[-1] = self.CURRENT_COLOR
                     
             pixels.append(line)
         array = np.array(pixels, dtype=np.uint8)
         self.cv2Image = cv2.cvtColor(np.array(im.fromarray(array).convert('RGB')), cv2.COLOR_RGB2BGR)
 
-    def UpdateCurrentPoint(self, x, y):
-        self.cv2Image[self.current[0]][self.current[1]] = [0, 255, 0]
+    def UpdateCurrentPoint(self, x:int, y:int):
+        self.cv2Image[self.current[0]][self.current[1]] = self.VISITED_COLOR
         self.current = [x, y]
-        self.cv2Image[x, y] = [0,0,255]
-        if self.current not in self.visitedCells:
-            self.visitedCells.append(self.current)
+        self.cv2Image[x, y] = self.CURRENT_COLOR
+        if self.current not in self.visited_cells:
+            self.visited_cells.append(self.current)
 
-    def highlightPath(self, path):
+    def HighlightPath(self, path:List[List[int]]):
         for node in path:
-            self.cv2Image[node[0]][node[1]] = [255, 0, 0]
-        self.cv2Image[self.endPoint[0]][self.endPoint[1]] = [0, 0, 255]
+            self.cv2Image[node[0]][node[1]] = self.HIGHLIGHTED_COLOR
+        # self.cv2Image[self.end_point[0]][self.end_point[1]] = [0, 0, 255]
 
     def MoveUp(self):
         x, y = self.current[0]-1, self.current[1]
-        if self.validMove(x, y):
+        if self.ValidMove(x, y):
             self.UpdateCurrentPoint(x, y)
 
     def MoveDown(self):
         x, y = self.current[0]+1, self.current[1]
-        if self.validMove(x, y):
+        if self.ValidMove(x, y):
             self.UpdateCurrentPoint(x, y)
 
     def MoveRight(self):
         x, y = self.current[0], self.current[1]+1
-        if self.validMove(x, y):
+        if self.ValidMove(x, y):
             self.UpdateCurrentPoint(x, y)
 
     def MoveLeft(self):
         x, y = self.current[0], self.current[1]-1
-        if self.validMove(x, y):
+        if self.ValidMove(x, y):
             self.UpdateCurrentPoint(x, y)
 
-    def validMove(self, x, y):
+    def ValidMove(self, x:int, y:int):
+        # Cant move beyond boundaries
         if (x < 0 or x >= self.height or y < 0 or y >= self.width):
             return False
+        # Cant move to wall
         if (self.maze[x][y] == self.wall):
             return False
         return True
 
-    def GetValidMoves(self, x, y):
+    def GetValidMoves(self, x:int, y:int):
+        # All directions [r, u, l, d]
         suposedValid = [[x+1, y], [x, y+1], [x-1, y], [x, y-1]]
-        return [move for move in suposedValid if self.validMove(move[0], move[1])]
+        
+        # Return array of possible directions to go ex. [up, down]
+        return [move for move in suposedValid if self.ValidMove(move[0], move[1])]
